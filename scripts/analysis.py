@@ -26,6 +26,7 @@ def find_path_to_directory(kaggle_path: str) -> str:
     """
     directory_path =  kagglehub.dataset_download("baraazaid/superhero-battles")
     print("Path to dataset files:", directory_path)
+    return directory_path
 
 def main():
     # Download latest version
