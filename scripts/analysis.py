@@ -1,38 +1,38 @@
 import os
 import pandas as pd
 import kagglehub
+import argparse
 
-def find_path_to_directory(kaggle_path: str) -> str:
+def find_path_to_directory(kp: str) -> str:
     """
-    Download the Kaggle dataset of interest
-    and construct the absolute path to its 
+    Downloads the Kaggle dataset of interest
+    and constructs the absolute path to its 
     parent directory on the user's local machine.
       
-    Parameters
-    __________
-    kaggle_path: string
-                 Path to the dataset on Kaggle's
-                 website. Contains the username of the
-                 dataset's uploader and the name of 
-                 the dataset.
+    Args:
+        kp (str): Path to the dataset on Kaggle's
+                    website. 
 
                  Example: `username/userdataset`
 
-    Returns
-    _______
-    str
-                The path to the directory containing
+    Returns:
+        str: The path to the directory containing
                 the dataset.
     """
     directory_path =  kagglehub.dataset_download("baraazaid/superhero-battles")
     print("Path to dataset files:", directory_path)
     return directory_path
 
-def main():
-    # Download latest version
-    path = kagglehub.dataset_download("baraazaid/superhero-battles")
+def main(args):
+    kaggle_path = args.kaggle_path
+    dataset_name = args.dataset_name
 
-    print("Path to dataset files:", path)
+    find_path_to_directory(kaggle_path)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Download a Kaggle dataset and analyze it using SQLite and Pandas.")
+    parser.add_argument("kaggle_path", help="Path to file on Kaggle's website (username + '/' + dataset name)")
+    parser.add_argument("dataset_name", help="Name of locally-downloaded dataset to analyze within directory located at `kaggle_path`")
+    
+    args = parser.parse_args()
     main()
