@@ -19,9 +19,23 @@ def find_path_to_directory(kp: str) -> str:
         str: The path to the directory containing
                 the dataset.
     """
-    directory_path =  kagglehub.dataset_download("baraazaid/superhero-battles")
+    directory_path =  kagglehub.dataset_download(kp)
     print("Path to dataset files:", directory_path)
     return directory_path
+
+def create_df(fp: str) -> pd.DataFrame:
+    """
+    Constructs the data.
+      
+    Args:
+        fp (str): Path to the locally-downloaded file. 
+
+                 Example: `.../file.xslx` or `.../file.csv`
+
+    Returns:
+        pd.DataFrame: The DataFrame representation of the file.
+    """
+  
 
 def main(args):
     kaggle_path = args.kaggle_path
