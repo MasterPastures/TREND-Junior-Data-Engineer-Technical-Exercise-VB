@@ -45,13 +45,21 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
     locations_columns = ['city', 'location_type', 'incident_zip', 
                         'borough'] 
                         # rename 'incident_zip' to 'zipcode'
+                        # rename 'location_id' to 'id'
 
     # Add this column to DataFrame for joins:
     # 'location_id': 'city' + '_' + 'borough' + '_' + 'incident_zip'
 
+    for data_chunk in dataset_generator:
+        incident_df = data_chunk[incident_columns]
+        incident_df['location_id'] = incident_df['city'] + '_' + incident_df['borough'] + '_' + incident_df['incident_zip']
+
+        locations_df = data_chunk[locations_columns]
+        locations_df['location_id'] = locations_df['city'] + '_' + locations_df['borough'] + '_' + locations_df['incident_zip']
+
+    gc.collect()
 
 def main():
-    total_size = 0
     for data_chunk in read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 50000000, 10000):
         print(data_chunk.head())
 
