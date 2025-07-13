@@ -44,9 +44,10 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
     
     locations_columns = ['city', 'location_type', 'incident_zip', 
                         'borough'] 
-                        # rename 'incident_zip' to 'zipcode', use index as id
-                        # REMEMBER TO INDEX IN REVERSE SINCE NEW ROWS ARE UPLOADED AT THE TOP
-                        # OTHERWISE THERE WILL BE OVERWRITES IN INDEX
+                        # rename 'incident_zip' to 'zipcode'
+
+    # Add this column to DataFrame for joins:
+    # 'location_id': 'city' + '_' + 'borough' + '_' + 'incident_zip'
 
 
 def main():
