@@ -1,8 +1,8 @@
-import os
 import pandas as pd
 import argparse
 import gc
 from typing import Generator
+import sqlite3
 
 def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
     """
@@ -18,7 +18,7 @@ def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
 
         chunk_size (int): The size, in rows, of the chunks.
 
-    Returns:
+    Yields:
         str: The path to the directory containing
                 the dataset.
     """
@@ -26,7 +26,39 @@ def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
     for chunk in pd.read_csv(path_with_limit, chunksize=chunk_size):
         yield chunk
 
-#def main(args):
+def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
+    """
+    Defines SQL tables and loads the pandas DataFrames
+    into them.
+    
+    Args:
+        dataset_generator (Generator): The dataset parsed from the given URL.
+        
+    Yields:
+        sqlite3: The sqlite3 table representation of the dataset."""
+    
+    sql_statements = [ 
+    """CREATE TABLE IF NOT EXISTS location (
+            id INTEGER PRIMARY KEY,
+            city text NOT NULL,
+            location_type text NOT NULL,
+            zipcode text NOT NULL,
+            borough text NOT NULL
+        );""",
+
+    """CREATE TABLE IF NOT EXISTS incident (
+            incident_id INTEGER PRIMARY KEY, 
+            agency text NOT NULL, 
+            complaint_type TEXT NOT NULL,
+            location_id INT NOT NULL,
+            descriptor text NOT NULL,
+            status text NOT NULL, 
+            created_date DATE NOT NULL, 
+            closed_date DATE NOT NULL, 
+            FOREIGN KEY (location_id) REFERENCES locations (id)
+        );"""
+]
+
 def main():
     total_size = 0
     for data_chunk in read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 50000000, 10000):
@@ -57,4 +89,12 @@ db.close()
 conn = sqlite3.connect("my_large_data.sqlite")
 df = pd.read_sql_query("SELECT * FROM my_table WHERE relevant_column = 'some_value'", conn)
 conn.close()
+"""
+
+"""NOTES TO SELF:
+SELECT A SUBSET OF COLUMNS ONCE THE DATA IS LOADED
+COMMUNITY BOARD AND BOROUGH ARE DUPLICATIVE
+CITY CAN GO IN AN INCIDENT-SPECIFIC TABLE AND BOROUGH CAN GO IN ANOTHER FOR JOINS
+COLUMN B IS A PARCEL ID
+
 """
