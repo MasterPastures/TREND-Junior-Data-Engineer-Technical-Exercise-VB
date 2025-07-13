@@ -3,6 +3,7 @@ import argparse
 import gc
 from typing import Generator
 import sqlite3
+from datetime import date
 
 def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
     """
@@ -38,8 +39,8 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
         sqlite3: The sqlite3 table representation of the dataset."""
     
     incident_columns = ['unique_key', 'agency', 'complaint_type',
-                        'location_id', 'descriptor', 'status',
-                        'created_date', 'closed_date'] 
+                        'descriptor', 'status', 'created_date', 
+                        'closed_date'] 
                         # rename 'unique_key' to 'incident_id' and 'status' to 'incident_status'
     
     locations_columns = ['city', 'location_type', 'incident_zip', 
@@ -52,16 +53,38 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
 
     for data_chunk in dataset_generator:
         incident_df = data_chunk[incident_columns]
-        incident_df['location_id'] = incident_df['city'] + '_' + incident_df['borough'] + '_' + incident_df['incident_zip']
+        incident_df['location_id'] = data_chunk['city'] + '_' + data_chunk['borough'] + '_' + data_chunk['incident_zip']
+        incident_df = incident_df.rename(columns={'unique_key': 'incident_id', 'status': 'incident_status'})
+        incident_df = incident_df.astype({'incident_id': str, 'agency': str, 'complaint_type': str,
+                                          'descriptor': str, 'incident_status': str, 'created_date': date,
+                                          'closed_date': date, 'location_id': str})
 
         locations_df = data_chunk[locations_columns]
-        locations_df['location_id'] = locations_df['city'] + '_' + locations_df['borough'] + '_' + locations_df['incident_zip']
+        locations_df['location_id'] = data_chunk['city'] + '_' + data_chunk['borough'] + '_' + data_chunk['incident_zip']
+        locations_df = locations_df.rename(columns={'incident_zip': 'zipcode', 'location_id': 'id'})
+        locations_df = locations_df.astype({'city': str, 'location_type': str, 'zipcode': str,
+                                          'borough': str, 'id': str})
+
+        print(locations_df)
 
     gc.collect()
+    
+    """try:
+        with sqlite3.connect('nyc311.db') as conn: # Connect to or create the database file
+            with open('../.sql_files/schema.sql', 'r') as sql_file: # Open and read the SQL file
+                sql_script = sql_file.read()
+                conn.executescript(sql_script) # Execute the SQL script
+                incident_df.to_sql('incident', conn, if_exists='append', index=False) # populate incident table
+                locations_df.to_sql('locations', conn, if_exists='append', index=False) # populate locations table
+                print("Database and tables created successfully!")
+        conn.close()
+
+    except sqlite3.Error as e:
+        print(f"Error: {e}") """
 
 def main():
-    for data_chunk in read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 50000000, 10000):
-        print(data_chunk.head())
+    gen = read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 50000000, 10000)
+    dataset_into_sql(gen)        
 
     gc.collect()
 
