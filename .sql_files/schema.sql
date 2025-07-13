@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS location (
+CREATE TABLE IF NOT EXISTS locations (
     id INTEGER PRIMARY KEY,
     city text NOT NULL,
     location_type text NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS incident (
     complaint_type TEXT NOT NULL,
     location_id INT NOT NULL,
     descriptor text NOT NULL,
-    status text NOT NULL, 
+    incident_status text NOT NULL, 
     created_date DATE NOT NULL, 
     closed_date DATE NOT NULL, 
     FOREIGN KEY (location_id) REFERENCES locations (id)
