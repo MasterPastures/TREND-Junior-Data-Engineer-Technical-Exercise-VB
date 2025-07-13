@@ -37,27 +37,8 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
     Yields:
         sqlite3: The sqlite3 table representation of the dataset."""
     
-    sql_statements = [ 
-    """CREATE TABLE IF NOT EXISTS location (
-            id INTEGER PRIMARY KEY,
-            city text NOT NULL,
-            location_type text NOT NULL,
-            zipcode text NOT NULL,
-            borough text NOT NULL
-        );""",
+    
 
-    """CREATE TABLE IF NOT EXISTS incident (
-            incident_id INTEGER PRIMARY KEY, 
-            agency text NOT NULL, 
-            complaint_type TEXT NOT NULL,
-            location_id INT NOT NULL,
-            descriptor text NOT NULL,
-            status text NOT NULL, 
-            created_date DATE NOT NULL, 
-            closed_date DATE NOT NULL, 
-            FOREIGN KEY (location_id) REFERENCES locations (id)
-        );"""
-]
 
 def main():
     total_size = 0
