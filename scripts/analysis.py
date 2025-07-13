@@ -29,7 +29,7 @@ def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
 #def main(args):
 def main():
     total_size = 0
-    for data_chunk in read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 500000, 10000):
+    for data_chunk in read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 50000000, 10000):
         print(data_chunk.head())
 
     gc.collect()
