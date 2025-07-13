@@ -37,7 +37,16 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
     Yields:
         sqlite3: The sqlite3 table representation of the dataset."""
     
+    incident_columns = ['unique_key', 'agency', 'complaint_type',
+                        'location_id', 'descriptor', 'status',
+                        'created_date', 'closed_date'] 
+                        # rename 'unique_key' to 'incident_id' and 'status' to 'incident_status'
     
+    locations_columns = ['city', 'location_type', 'incident_zip', 
+                        'borough'] 
+                        # rename 'incident_zip' to 'zipcode', use index as id
+                        # REMEMBER TO INDEX IN REVERSE SINCE NEW ROWS ARE UPLOADED AT THE TOP
+                        # OTHERWISE THERE WILL BE OVERWRITES IN INDEX
 
 
 def main():
