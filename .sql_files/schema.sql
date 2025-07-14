@@ -2,8 +2,7 @@ CREATE TABLE IF NOT EXISTS locations (
     id text PRIMARY KEY,
     city text,
     zipcode text,
-    borough text,
-    CONSTRAINT location_unique UNIQUE (id)
+    borough text
 );
 
 CREATE TABLE IF NOT EXISTS incident (
