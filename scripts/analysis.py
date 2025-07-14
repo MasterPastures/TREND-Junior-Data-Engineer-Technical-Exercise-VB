@@ -29,16 +29,14 @@ def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
     for chunk in pd.read_csv(path_with_limit, chunksize=chunk_size, parse_dates=date_cols):
         yield chunk
 
-def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
+def dataset_into_sql(dataset_generator: Generator):
     """
     Defines SQL tables and loads the pandas DataFrames
     into them.
     
     Args:
         dataset_generator (Generator): The dataset parsed from the given URL.
-        
-    Yields:
-        sqlite3: The sqlite3 table representation of the dataset."""
+    """
     
     incident_columns = ['unique_key', 'agency', 'complaint_type',
                         'descriptor', 'status', 'created_date', 
@@ -59,13 +57,16 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
         incident_df = incident_df.astype({'incident_id': str, 'agency': str, 'complaint_type': str,
                                           'descriptor': str, 'incident_status': str, 'location_type': str})
         incident_df['location_id'] = data_chunk['incident_zip'].astype(str) + '_' + data_chunk['borough'].astype(str)
+        incident_df.dropna(subset=['incident_id'], inplace=True)
+
 
         locations_df = data_chunk[locations_columns]
         locations_df = locations_df.rename(columns={'incident_zip': 'zipcode'})
         locations_df = locations_df.astype({'city': str, 'zipcode': str,
                                           'borough': str})
         locations_df['id'] = data_chunk['incident_zip'].astype(str) + '_' + data_chunk['borough'].astype(str)
-        
+        locations_df.dropna(subset=['id'], inplace=True)
+                
         try:
             conn = sqlite3.connect('nyc311.db') # Connect to or create the database file
             with open('../.sql_files/schema.sql', 'r') as sql_file: # Open and read the SQL file
@@ -73,11 +74,13 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
             cur = conn.cursor()
             cur.executescript(sql_script) # Execute the SQL script
             try:
-                incident_df.to_sql('incident', conn, if_exists='append', index=False) # populate incident table
-                locations_df.to_sql('locations', conn, if_exists='append', index=False) # populate locations table
+                incident_df.to_sql('incident', conn, if_exists='replace', index=False) # populate incident table
             except sqlite3.IntegrityError as e:
-                print(f"Integrity Error: {e}")
-                print("Duplicate rows were not inserted due to unique constraint.")
+                print("Duplicate rows have been detected in the `incident` table.")
+            try:
+                locations_df.to_sql('locations', conn, if_exists='replace', index=False) # populate locations table
+            except sqlite3.IntegrityError as e:
+                print("Duplicate rows have been detected in the `locations` table.")
             print("Database and tables created successfully!")
             conn.commit()
             conn.close()
@@ -92,8 +95,25 @@ def main():
     gen = read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 5, 5)
     dataset_into_sql(gen)        
 
-    # Answer 3 interesting questions about the dataset
+    connection = sqlite3.connect("nyc311.db")
 
+    # cursor
+    crsr = connection.cursor()
+
+    # SQL command to create a table in the database
+    sql_command = """SELECT *
+    FROM locations;"""
+
+    # execute the statement
+    crsr.execute(sql_command)
+
+    ans = crsr.fetchall()
+
+    for i in ans:
+        print(i)    
+    # Answer 3 interesting questions about the dataset
+    
+    connection.close()
 
     gc.collect()
 
