@@ -41,10 +41,10 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
     
     incident_columns = ['unique_key', 'agency', 'complaint_type',
                         'descriptor', 'status', 'created_date', 
-                        'closed_date'] 
+                        'closed_date', 'location_type'] 
                         # rename 'unique_key' to 'incident_id' and 'status' to 'incident_status'
     
-    locations_columns = ['city', 'location_type', 'incident_zip', 
+    locations_columns = ['city', 'incident_zip', 
                         'borough'] 
                         # rename 'incident_zip' to 'zipcode'
                         # rename 'location_id' to 'id'
@@ -56,7 +56,7 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
         incident_df = data_chunk[incident_columns]
         incident_df = incident_df.rename(columns={'unique_key': 'incident_id', 'status': 'incident_status'})
         incident_df = incident_df.astype({'incident_id': str, 'agency': str, 'complaint_type': str,
-                                          'descriptor': str, 'incident_status': str})
+                                          'descriptor': str, 'incident_status': str, 'location_type': str})
         date_cols = ['created_date', 'closed_date']
         incident_df[date_cols] = incident_df[date_cols].apply(pd.to_datetime, errors='coerce', format='%Y-%m-%d')
 
@@ -64,7 +64,7 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
 
         locations_df = data_chunk[locations_columns]
         locations_df = locations_df.rename(columns={'incident_zip': 'zipcode'})
-        locations_df = locations_df.astype({'city': str, 'location_type': str, 'zipcode': str,
+        locations_df = locations_df.astype({'city': str, 'zipcode': str,
                                           'borough': str})
         locations_df['id'] = data_chunk['incident_zip'].astype(str) + '_' + data_chunk['borough'].astype(str)
         
