@@ -25,7 +25,8 @@ def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
                 the dataset.
     """
     path_with_limit =  file_path + '?$limit=' + str(limit)
-    for chunk in pd.read_csv(path_with_limit, chunksize=chunk_size):
+    date_cols = ['created_date', 'closed_date']
+    for chunk in pd.read_csv(path_with_limit, chunksize=chunk_size, parse_dates=date_cols):
         yield chunk
 
 def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
@@ -57,9 +58,6 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
         incident_df = incident_df.rename(columns={'unique_key': 'incident_id', 'status': 'incident_status'})
         incident_df = incident_df.astype({'incident_id': str, 'agency': str, 'complaint_type': str,
                                           'descriptor': str, 'incident_status': str, 'location_type': str})
-        date_cols = ['created_date', 'closed_date']
-        incident_df[date_cols] = incident_df[date_cols].apply(pd.to_datetime, errors='coerce', format='%Y-%m-%d')
-
         incident_df['location_id'] = data_chunk['incident_zip'].astype(str) + '_' + data_chunk['borough'].astype(str)
 
         locations_df = data_chunk[locations_columns]
@@ -87,15 +85,15 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
         except sqlite3.Error as e:
             print(e)
 
-        print(incident_df)
-        print(locations_df)
-
         gc.collect()
     
 
 def main():
     gen = read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 5, 5)
     dataset_into_sql(gen)        
+
+    # Answer 3 interesting questions about the dataset
+
 
     gc.collect()
 
