@@ -194,5 +194,10 @@ if __name__ == "__main__":
     parser.add_argument("-cli_limit", type=int, help="Number of rows to select from the NYC 311 dataset.")
     parser.add_argument("-cli_chunk", type=int, help="Number of chunks to divide the selected number of rows into.")
     
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit as e:
+        print("Invalid arguments.")
+        raise
+    
     main(args)
