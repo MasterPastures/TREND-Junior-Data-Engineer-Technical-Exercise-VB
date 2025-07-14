@@ -3,7 +3,8 @@ import argparse
 import gc
 from typing import Generator
 import sqlite3
-from datetime import date
+import datetime
+import numpy as np
 
 def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
     """
@@ -49,41 +50,51 @@ def dataset_into_sql(dataset_generator: Generator) -> sqlite3:
                         # rename 'location_id' to 'id'
 
     # Add this column to DataFrame for joins:
-    # 'location_id': 'city' + '_' + 'borough' + '_' + 'incident_zip'
+    # 'location_id': 'incident_zip' + 'borough'
 
     for data_chunk in dataset_generator:
         incident_df = data_chunk[incident_columns]
-        incident_df['location_id'] = data_chunk['city'] + '_' + data_chunk['borough'] + '_' + data_chunk['incident_zip']
         incident_df = incident_df.rename(columns={'unique_key': 'incident_id', 'status': 'incident_status'})
         incident_df = incident_df.astype({'incident_id': str, 'agency': str, 'complaint_type': str,
-                                          'descriptor': str, 'incident_status': str, 'created_date': date,
-                                          'closed_date': date, 'location_id': str})
+                                          'descriptor': str, 'incident_status': str})
+        date_cols = ['created_date', 'closed_date']
+        incident_df[date_cols] = incident_df[date_cols].apply(pd.to_datetime, errors='coerce', format='%Y-%m-%d')
+
+        incident_df['location_id'] = data_chunk['incident_zip'].astype(str) + '_' + data_chunk['borough'].astype(str)
 
         locations_df = data_chunk[locations_columns]
-        locations_df['location_id'] = data_chunk['city'] + '_' + data_chunk['borough'] + '_' + data_chunk['incident_zip']
-        locations_df = locations_df.rename(columns={'incident_zip': 'zipcode', 'location_id': 'id'})
+        locations_df = locations_df.rename(columns={'incident_zip': 'zipcode'})
         locations_df = locations_df.astype({'city': str, 'location_type': str, 'zipcode': str,
-                                          'borough': str, 'id': str})
-
-        print(locations_df)
-
-    gc.collect()
-    
-    """try:
-        with sqlite3.connect('nyc311.db') as conn: # Connect to or create the database file
+                                          'borough': str})
+        locations_df['id'] = data_chunk['incident_zip'].astype(str) + '_' + data_chunk['borough'].astype(str)
+        
+        try:
+            conn = sqlite3.connect('nyc311.db') # Connect to or create the database file
             with open('../.sql_files/schema.sql', 'r') as sql_file: # Open and read the SQL file
                 sql_script = sql_file.read()
-                conn.executescript(sql_script) # Execute the SQL script
+            cur = conn.cursor()
+            cur.executescript(sql_script) # Execute the SQL script
+            try:
                 incident_df.to_sql('incident', conn, if_exists='append', index=False) # populate incident table
                 locations_df.to_sql('locations', conn, if_exists='append', index=False) # populate locations table
-                print("Database and tables created successfully!")
-        conn.close()
+            except sqlite3.IntegrityError as e:
+                print(f"Integrity Error: {e}")
+                print("Duplicate rows were not inserted due to unique constraint.")
+            print("Database and tables created successfully!")
+            conn.commit()
+            conn.close()
 
-    except sqlite3.Error as e:
-        print(f"Error: {e}") """
+        except sqlite3.Error as e:
+            print(e)
+
+        print(incident_df)
+        print(locations_df)
+
+        gc.collect()
+    
 
 def main():
-    gen = read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 50000000, 10000)
+    gen = read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 5, 5)
     dataset_into_sql(gen)        
 
     gc.collect()
@@ -96,27 +107,3 @@ if __name__ == "__main__":
     #args = parser.parse_args()
     #main(args)
     main()
-
-    """import sqlite3
-import pandas as pd
-
-db = sqlite3.connect("my_large_data.sqlite")
-# Load your CSV into SQLite in chunks
-for chunk in pd.read_csv("large_dataset.csv", chunksize=10000):
-    chunk.to_sql("my_table", db, if_exists="append")
-db.execute("CREATE INDEX my_index ON my_table(relevant_column)") # Create an index for faster queries
-db.close()
-
-# Later, query the database
-conn = sqlite3.connect("my_large_data.sqlite")
-df = pd.read_sql_query("SELECT * FROM my_table WHERE relevant_column = 'some_value'", conn)
-conn.close()
-"""
-
-"""NOTES TO SELF:
-SELECT A SUBSET OF COLUMNS ONCE THE DATA IS LOADED
-COMMUNITY BOARD AND BOROUGH ARE DUPLICATIVE
-CITY CAN GO IN AN INCIDENT-SPECIFIC TABLE AND BOROUGH CAN GO IN ANOTHER FOR JOINS
-COLUMN B IS A PARCEL ID
-
-"""
