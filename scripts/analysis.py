@@ -4,6 +4,7 @@ import gc
 from typing import Generator
 import sqlite3
 import os
+import matplotlib.pyplot as plt
 
 def read_large_file(file_path: str, limit: int, chunk_size: int) -> Generator:
     """
@@ -98,9 +99,12 @@ def dataset_into_sql(dataset_generator: Generator):
         gc.collect()
     
 
-def main():
+def main(args):
 
-    gen = read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', 50, 10)
+    cli_limit = args.cli_limit
+    cli_chunk = args.cli_chunk
+    
+    gen = read_large_file('https://data.cityofnewyork.us/resource/erm2-nwe9.csv', cli_limit, cli_chunk)
     dataset_into_sql(gen)        
     
     connection = sqlite3.connect("nyc311.db")
@@ -150,15 +154,35 @@ def main():
     output_resolution = '../visualizations/resolution_time_by_borough.txt'
     with open(output_resolution, 'w') as f:
         # Write header (optional)
-        f.write(f"Number of unique cities: {ans_res}") 
+        f.write(f"Average number of days to resolve an issue in each borough: {ans_res}") 
 
     print(f"Average time to resolution by borough has been written to {output_resolution}")  
 
-    # [Pandas] 3. What's the most common incident type in each borough?
+    # [Pandas] 3. What's the most common complaint type for each location type?
 
     common_incident_df = pd.read_sql_query("SELECT * from incident", connection)
 
+    incident_clean = common_incident_df.dropna(subset=["complaint_type", "location_type"])
 
+    counts = (
+        incident_clean.groupby(["location_type", "complaint_type"])
+        .size()
+        .reset_index(name="count")
+    )
+
+    most_common = counts.loc[counts.groupby("location_type")["count"].idxmax()].reset_index(drop=True)
+
+    plt.figure(figsize=(10, 8))
+    plt.barh(most_common["location_type"], most_common["count"], color="skyblue")
+    plt.xlabel("Most Frequent Complaint Count")
+    plt.title("Most Common Complaint Type by Location Type")
+
+    # Optional: add labels to the bars
+    for i, row in most_common.iterrows():
+        plt.text(row["count"] + 1, i, row["complaint_type"], va="center", fontsize=8)
+
+    plt.tight_layout()
+    plt.savefig('../visualizations/most_common_complaints_by_location')
 
     connection.close()
     os.remove("nyc311.db")
@@ -166,10 +190,9 @@ def main():
     gc.collect()
 
 if __name__ == "__main__":
-    #parser = argparse.ArgumentParser(description="Download a Kaggle dataset and analyze it using SQLite and Pandas.")
-    #parser.add_argument("kaggle_path", help="Path to file on Kaggle's website (username + '/' + dataset name)")
-    #parser.add_argument("dataset_name", help="Name of locally-downloaded dataset to analyze within directory located at `kaggle_path`")
+    parser = argparse.ArgumentParser(description="Download an NYC 311 dataset and analyze it using SQLite and Pandas.")
+    parser.add_argument("-cli_limit", type=int, help="Number of rows to select from the NYC 311 dataset.")
+    parser.add_argument("-cli_chunk", type=int, help="Number of chunks to divide the selected number of rows into.")
     
-    #args = parser.parse_args()
-    #main(args)
-    main()
+    args = parser.parse_args()
+    main(args)
