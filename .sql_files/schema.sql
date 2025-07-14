@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS locations (
     id text PRIMARY KEY,
     city text,
-    location_type text,
     zipcode text,
     borough text
 );
