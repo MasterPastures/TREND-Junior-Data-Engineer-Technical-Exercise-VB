@@ -29,4 +29,6 @@ Issues:
     * Example usage: `python analysis.py -cli_limit 50 -cli_chunk 10` (runs the pipeline on 50 rows from the dataset in sizes of 10)
 
 Notes:
+* Please try to define your `cli_chunk` as a denomination of the value you have chosen for `cli_limit`:
+    * For example, if you choose `cli_limit` as `1000`, choose a value like `100`, `500`, etc. for `cli_limit`
 * There seems to be something awry with the `resolution_time_in_days` calculation. I am assuming it is the SQLite `julianday` function I used to try and get the number of days between dates. Given more time, I would definitely fix this.
