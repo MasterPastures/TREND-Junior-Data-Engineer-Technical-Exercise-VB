@@ -22,7 +22,8 @@ Issues:
 * I have run into what I believe are harsh API rate limits with my approach, even when setting a limit of 500 rows to read from the larger dataset, making each run take longer and increasing the difficulty of debugging
 
 ## How to run the pipeline:
-* Use this command: `python analysis.py -cli_limit <cli_limit> -cli_chunk <cli_chunk>`
+* `cd` to the `C:\TREND-Junior-Data-Engineer-Technical-Exercise-VB\scripts` subdirectory
+* Run this command in a terminal: `python analysis.py -cli_limit <cli_limit> -cli_chunk <cli_chunk>`
     * Replace `<cli_limit>` with the number of rows you want to query from the NYC 311 dataset
     * Replace `<cli_chunk>` with the size of each chunk you want to process
     * Example usage: `python analysis.py -cli_limit 50 -cli_chunk 10` (runs the pipeline on 50 rows from the dataset in sizes of 10)
