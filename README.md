@@ -22,6 +22,7 @@ Issues:
 * I have run into what I believe are harsh API rate limits with my approach, even when setting a limit of 500 rows to read from the larger dataset, making each run take longer and increasing the difficulty of debugging
 
 ## How to run the pipeline:
+* Clone the repo to your local machine
 * `cd` to the `C:\TREND-Junior-Data-Engineer-Technical-Exercise-VB\scripts` subdirectory
 * Run this command in a terminal: `python analysis.py -cli_limit <cli_limit> -cli_chunk <cli_chunk>`
     * Replace `<cli_limit>` with the number of rows you want to query from the NYC 311 dataset
